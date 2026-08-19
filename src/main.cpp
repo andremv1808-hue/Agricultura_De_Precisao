@@ -21,13 +21,14 @@
   o include de Arduino.h abaixo é necessário para setup(), loop(), Serial etc.
   Se estiver usando PlatformIO, salve este arquivo como src/main.cpp.
 */
-
+#include <WiFi.h>
 #include <Arduino.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <WebServer.h>
 
 // ---------- Configuração dos pinos ----------
-#define ONE_WIRE_BUS 4 // pino de dados do DS18B20
+#define ONE_WIRE_BUS 5 // pino de dados do DS18B20
 #define SOIL_PIN 34    // pino analógico do sensor de umidade do solo
 
 // ---------- Calibração do sensor de umidade do solo ----------
@@ -41,10 +42,56 @@
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
+const char *ssid = "Ap_2101";
+const char *password = "Andre92074072";
+
+WebServer server(80);
+void paginainicial()
+{
+  String html = R"rawliteral(
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Monitoramento do Solo</title>
+    </head>
+    <body>
+
+        <h1>Monitoramento do Solo</h1>
+
+        <p>Temperatura: -- °C</p>
+        <p>Umidade: -- %</p>
+
+    </body>
+    </html>
+    )rawliteral";
+
+  server.send(200, "text/html", html);
+}
+
 void setup()
 {
   Serial.begin(115200);
   delay(500);
+
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+  Serial.println("Wi-Fi conectado!");
+  Serial.print("IP: ");
+  Serial.println(WiFi.localIP());
+
+  server.on("/", paginainicial);
+  server.begin();
+  {
+    /* code */
+  }
 
   sensors.begin();
 
@@ -63,6 +110,7 @@ void setup()
 
 void loop()
 {
+  server.handleClient();
   // ---------- Leitura de temperatura ----------
   sensors.requestTemperatures();
   float temperaturaC = sensors.getTempCByIndex(0);
