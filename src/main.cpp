@@ -32,20 +32,27 @@
 #define SOIL_PIN 34    // pino analógico do sensor de umidade do solo
 
 // ---------- Calibração do sensor de umidade do solo ----------
-// Esses valores variam de sensor para sensor. Para calibrar:
-//   1) Deixe o sensor seco, ao ar livre, e anote o valor bruto lido (SOIL_DRY)
-//   2) Mergulhe a ponta do sensor em água (ou solo bem molhado) e anote (SOIL_WET)
 #define SOIL_DRY 3000
 #define SOIL_WET 1200
 
 // ---------- Objetos dos sensores ----------
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
-
+// ---------- Wifi-------------
 const char *ssid = "Ap_2101";
 const char *password = "Andre92074072";
-
+// ---------- Servidor Web ---------
 WebServer server(80);
+
+// Valores dos sensores
+float temperaturaC = 0.0;
+int umidadePercentual = 0;
+int leituraBruta = 0;
+
+// Controle tempo de leitura
+unsigned long ultimoTempo = 0;
+const unsigned long intervalo = 2000;
+
 void paginainicial()
 {
   String html = R"rawliteral(
@@ -60,14 +67,52 @@ void paginainicial()
 
         <h1>Monitoramento do Solo</h1>
 
-        <p>Temperatura: -- °C</p>
-        <p>Umidade: -- %</p>
+        <p id = "temperatura"></p>°C
+        <p id = "umidade"></p>%
+
+        <script>
+        
+        function atualizarDados(){
+        fetch('dados')
+
+          .then(response => response.json())
+
+          .then(data => {
+            
+            document.getElementById('temperatura').textContent = data.temperatura.toFixed(2);
+            
+            document.getElementById('umidade').textContent = data.umidade;
+          })
+            .catch(error => {
+            console.error('Erro ao buscar dados:', error);
+          });
+        }
+
+        atualizarDados();
+        
+        setInterval(atualizarDados, 1);
+
+        </script>
 
     </body>
     </html>
     )rawliteral";
 
   server.send(200, "text/html", html);
+}
+
+void enviarDados()
+{
+  String json = "{";
+  json += "\"temperatura\":";
+  json += String(temperaturaC, 2);
+  json += ",";
+
+  json += "\"umidade\":";
+  json += String(umidadePercentual);
+  json += "}";
+
+  server.send(200, "applicating/json", json);
 }
 
 void setup()
@@ -87,12 +132,14 @@ void setup()
   Serial.print("IP: ");
   Serial.println(WiFi.localIP());
 
+  // server routes
   server.on("/", paginainicial);
-  server.begin();
-  {
-    /* code */
-  }
+  server.on("/dados", enviarDados);
 
+  // iniciar servidor
+  server.begin();
+
+  // inicia os sensores
   sensors.begin();
 
   Serial.println();
@@ -111,14 +158,21 @@ void setup()
 void loop()
 {
   server.handleClient();
-  // ---------- Leitura de temperatura ----------
-  sensors.requestTemperatures();
-  float temperaturaC = sensors.getTempCByIndex(0);
 
-  // ---------- Leitura de umidade do solo ----------
-  int leituraBruta = analogRead(SOIL_PIN);
-  int umidadePercentual = map(leituraBruta, SOIL_DRY, SOIL_WET, 0, 100);
-  umidadePercentual = constrain(umidadePercentual, 0, 100);
+  if (millis() - ultimoTempo >= intervalo)
+  {
+    ultimoTempo = millis();
+
+    // Temperatura
+    sensors.requestTemperatures();
+    temperaturaC = sensors.getTempCByIndex(0);
+
+    // Umidade
+    leituraBruta = analogRead(SOIL_PIN);
+
+    umidadePercentual = map(leituraBruta, SOIL_DRY, SOIL_WET, 0, 100);
+    umidadePercentual = constrain(umidadePercentual, 0, 100);
+  }
 
   // ---------- Exibição no terminal ----------
   Serial.println("-----------------------------------------");

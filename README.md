@@ -1,3 +1,7 @@
-# Proejto 2P - Agricultura
+# Projeto 2P - Agricultura e Qualidade do Solo
 
-Alterei
+**André Marschal Vieira**
+**Enzo Nakakogue**
+**Rafael Motta**
+**Vinicius Togni**
+**Vicente Urban**
