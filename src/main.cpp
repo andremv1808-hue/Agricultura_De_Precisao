@@ -1,7 +1,7 @@
 /*
   ESP32 + DS18B20 + Sensor de umidade do solo
   Exibe temperatura e umidade do solo no Serial Monitor (terminal da IDE)
-teste
+
   Ligações:
     DS18B20:
       VDD  -> 3.3V
