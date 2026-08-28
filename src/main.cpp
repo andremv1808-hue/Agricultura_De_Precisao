@@ -1,55 +1,26 @@
-/*
-  ESP32 + DS18B20 + Sensor de umidade do solo
-  Exibe temperatura e umidade do solo no Serial Monitor (terminal da IDE)
 
-  Ligações:
-    DS18B20:
-      VDD  -> 3.3V
-      GND  -> GND
-      DATA -> GPIO4  (com resistor pull-up de 4.7kΩ entre DATA e 3.3V)
-
-    Sensor de umidade do solo:
-      VCC  -> 3.3V
-      GND  -> GND
-      AOUT -> GPIO34
-
-  Bibliotecas necessárias:
-    - OneWire        (por Jim Studt / Paul Stoffregen)
-    - DallasTemperature (por Miles Burton)
-
-  Observação: este é um arquivo .cpp "puro" (fora da Arduino IDE), por isso
-  o include de Arduino.h abaixo é necessário para setup(), loop(), Serial etc.
-  Se estiver usando PlatformIO, salve este arquivo como src/main.cpp.
-*/
 #include <WiFi.h>
 #include <Arduino.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <WebServer.h>
 
-// ---------- Configuração dos pinos ----------
 #define ONE_WIRE_BUS 5 // pino de dados do DS18B20
 #define SOIL_PIN 34    // pino analógico do sensor de umidade do solo
 
-// ---------- Calibração do sensor de umidade do solo ----------
 #define SOIL_DRY 3000
 #define SOIL_WET 1200
 
-// ---------- Objetos dos sensores ----------
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
-// ---------- Wifi-------------
-const char *ssid = "Ap_2101";
-const char *password = "Andre92074072";
-// ---------- Servidor Web ---------
+const char *ssid = "";
+const char *password = "";
 WebServer server(80);
 
-// Valores dos sensores
 float temperaturaC = 0.0;
 int umidadePercentual = 0;
 int leituraBruta = 0;
 
-// Controle tempo de leitura
 unsigned long ultimoTempo = 0;
 const unsigned long intervalo = 2000;
 
